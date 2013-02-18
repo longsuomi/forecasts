@@ -118,15 +118,6 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	public void run()
 	{
 		System.out.println("calculate");
-	}
-
-	@BeforeTransaction
-	public void setupData() throws Exception
-	{
-		executeSqlScript("classpath:clear.sql", false);
-
-		generateProducts();
-		generateSales();
 
 		final DateTime from = new DateTime().minusDays(365);
 
@@ -137,6 +128,16 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 
 		System.out.println(coldSales + " sales when it was cold");
 		System.out.println(warmSales + " sales when it was warm");
+	}
+
+	@BeforeTransaction
+	public void setupData() throws Exception
+	{
+		executeSqlScript("classpath:clear.sql", false);
+
+		generateProducts();
+		generateSales();
+
 
 	}
 }
