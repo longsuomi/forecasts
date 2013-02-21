@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author Till Freier
+ * 			Long Nghiem
  * 
  */
 @ContextConfiguration("classpath:application-context.xml")
