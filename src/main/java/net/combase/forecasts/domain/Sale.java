@@ -13,7 +13,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
-import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 
@@ -29,10 +28,10 @@ public class Sale implements Serializable
 	 */
 	private static final long serialVersionUID = -5276342266895181387L;
 
-	private Date dateTime;
-	
 	//
-	private LocalDate DateOnly ;
+	private Date dateOnly;
+
+	private Date dateTime;
 	//
 	private int dayOfWeek;
 
@@ -73,6 +72,15 @@ public class Sale implements Serializable
 		return true;
 	}
 
+	// ////////
+	/**
+	 * @return the date
+	 */
+	public LocalDate getDate()
+	{
+		return new LocalDate(dateOnly);
+	}
+
 	/**
 	 * @return the datetime
 	 */
@@ -80,16 +88,14 @@ public class Sale implements Serializable
 	{
 		return new DateTime(dateTime);
 	}
-	
-	//////////
-	/**
-	 * @return the date
-	 */
-	public LocalDate getDate()
-	{
-		return new LocalDate(DateOnly);
-	}
 
+	/**
+	 * @return the dayOfWeek
+	 */
+	public int getDayOfWeek()
+	{
+		return dayOfWeek;
+	}
 
 	/**
 	 * @return the discout
@@ -98,6 +104,7 @@ public class Sale implements Serializable
 	{
 		return discout;
 	}
+
 
 	/**
 	 * @return the id
@@ -150,26 +157,19 @@ public class Sale implements Serializable
 	public void setDateTime(final DateTime date)
 	{
 		dateTime = date.toDate();
+		dateOnly = date.toLocalDate().toDate();
+		dayOfWeek = date.getDayOfWeek();
 	}
-	
-	
-	
-	
-	/////
+
 	/**
-	 * @param DateOnly
-	 *            the DateOnly to set
+	 * @param dayOfWeek
+	 *            the dayOfWeek to set
 	 */
-	public void setDate(LocalDate DateOnly)
-	{
-		this.DateOnly = DateOnly;
-	}
-	
-	////
-	public void SetDayofWeek (int dayOfWeek)
+	public void setDayOfWeek(final int dayOfWeek)
 	{
 		this.dayOfWeek = dayOfWeek;
 	}
+
 
 	/**
 	 * @param discout

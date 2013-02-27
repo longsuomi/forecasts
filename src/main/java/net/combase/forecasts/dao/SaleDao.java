@@ -39,16 +39,12 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	long getTotalSaleNo();
 	
 	 //Count number of day in a temp range
-	@Query("select count(distinct date(s.dateTime)) from Sale s where s.temp > :tempFrom and s.temp <= :tempTo")
+	@Query("select count(distinct s.dateOnly) from Sale s where s.temp > :tempFrom and s.temp <= :tempTo")
 	long getNoOfDayForTempRange(@Param("tempFrom") BigDecimal tempFrom,@Param("tempTo") BigDecimal tempTo);
-	@Query("select count(distinct date(s.dateTime)) from Sale s where s.temp > :temp30")
+	
+	@Query("select count(distinct s.dateOnly) from Sale s where s.temp > :temp30")
 	long getNoOfDayWhenTempOver30(@Param("temp30") BigDecimal temp30);
 	
-	//Count number of day of week
-	@Query("select count(distinct date(s.dateTime)) from Sale s where dayofweek(s.dateTime) = :day")
-	long getdayOfWeek(@Param("day") BigDecimal day);
-	
-	
-	
-	
+	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day")
+	long getDayOfWeek(@Param("day") int day);
 }
