@@ -3,6 +3,7 @@
  */
 package net.combase.forecasts.domain;
 
+
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -12,7 +13,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
+import org.joda.time.LocalDate;
 
 /**
  * @author Till Freier
@@ -27,6 +30,11 @@ public class Sale implements Serializable
 	private static final long serialVersionUID = -5276342266895181387L;
 
 	private Date dateTime;
+	
+	//
+	private LocalDate DateOnly ;
+	//
+	private int dayOfWeek;
 
 	private BigDecimal discout = BigDecimal.ZERO;
 
@@ -66,12 +74,22 @@ public class Sale implements Serializable
 	}
 
 	/**
-	 * @return the date
+	 * @return the datetime
 	 */
 	public DateTime getDateTime()
 	{
 		return new DateTime(dateTime);
 	}
+	
+	//////////
+	/**
+	 * @return the date
+	 */
+	public LocalDate getDate()
+	{
+		return new LocalDate(DateOnly);
+	}
+
 
 	/**
 	 * @return the discout
@@ -132,6 +150,25 @@ public class Sale implements Serializable
 	public void setDateTime(final DateTime date)
 	{
 		dateTime = date.toDate();
+	}
+	
+	
+	
+	
+	/////
+	/**
+	 * @param DateOnly
+	 *            the DateOnly to set
+	 */
+	public void setDate(LocalDate DateOnly)
+	{
+		this.DateOnly = DateOnly;
+	}
+	
+	////
+	public void SetDayofWeek (int dayOfWeek)
+	{
+		this.dayOfWeek = dayOfWeek;
 	}
 
 	/**
