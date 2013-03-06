@@ -6,6 +6,7 @@ package net.combase.forecasts.domain;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 import javax.persistence.Entity;
@@ -44,7 +45,7 @@ public class Sale implements Serializable
 	private BigDecimal price;
 
 	@ManyToOne
-	private Product product;
+	public Product product;
 
 	private BigDecimal temp;
 
@@ -193,9 +194,15 @@ public class Sale implements Serializable
 	 * @param price
 	 *            the price to set
 	 */
-	public void setPrice(final BigDecimal price)
+	public void setPrice(BigDecimal minPrice, BigDecimal maxPrice)
 	{
-		this.price = price;
+		this.price = minPrice.add((BigDecimal)(new BigDecimal(Math.random()).multiply(
+				(maxPrice.subtract(minPrice)).add(
+				new BigDecimal(1))))).setScale(2,RoundingMode.HALF_UP);
+		System.out.println("The price of this product is: " + price );
+		
+		
+		
 	}
 
 	/**
