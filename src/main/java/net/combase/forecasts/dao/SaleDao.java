@@ -6,6 +6,7 @@ package net.combase.forecasts.dao;
 import java.math.BigDecimal;
 import java.util.Date;
 
+import net.combase.forecasts.domain.Product;
 import net.combase.forecasts.domain.Sale;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -64,16 +65,20 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	
 	//*** Checking the effect of ratio: Price of the product 
 	//Get the average price of 1 product 
-	@Query("select AVG(price) from Sale s where s.product.name = :productName")
-	long getAvgPrice(@Param("productName") String productName);
+	@Query("select AVG(price) from Sale s where s.product = :product")
+	double getAvgPrice(@Param("product") Product product);
 	
 	//Get total sales number for each product
-	@Query("select count(*) from Sale s where s.product.name = :productName")
-	long getTotalSaleNoEachProd(@Param("productName") String productName);
+	@Query("select count(*) from Sale s where s.product = :product")
+	long getTotalSaleNoEachProd(@Param("product") Product product);
 	
 	//Get the number of price variants of 1 product 
-	@Query("select count(distinct price) from Sale s where s.product.name = :productName")
-	long getNoPriceVar(@Param("productName") String productName);
+	@Query("select count(distinct price) from Sale s where s.product = :product")
+	long getNoPriceVar(@Param("product") Product product);
+	
+	// Get number of days that have 1 specific product price
+	@Query("select count(distinct s.dateOnly) from Sale s where s.product = :product and s.price = :price")
+	long getNoDayPerPriceVar(@Param("product") Product product, @Param("price") BigDecimal price);
 	
 	
 }

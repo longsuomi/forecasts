@@ -30,7 +30,7 @@ public class Sale implements Serializable
 	private static final long serialVersionUID = -5276342266895181387L;
 
 	//
-	private Date dateOnly;
+	public Date dateOnly;
 
 	private Date dateTime;
 	//
@@ -194,11 +194,9 @@ public class Sale implements Serializable
 	 * @param price
 	 *            the price to set
 	 */
-	public void setPrice(BigDecimal minPrice, BigDecimal maxPrice)
+	public void setPrice(BigDecimal price)
 	{
-		this.price = minPrice.add((BigDecimal)(new BigDecimal(Math.random()).multiply(
-				(maxPrice.subtract(minPrice)).add(
-				new BigDecimal(1))))).setScale(2,RoundingMode.HALF_UP);
+		this.price = price;
 		System.out.println("The price of this product is: " + price );
 		
 		
