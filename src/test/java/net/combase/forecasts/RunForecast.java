@@ -297,6 +297,9 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		final BigDecimal avgSalePerPriceVarProd2 = totalSaleNoProd0.divide(new BigDecimal(
 				saleDao.getNoPriceVar(products.get(2))),4,RoundingMode.HALF_UP);
 		
+		//List<Product> products =productDao.findAll();
+		
+		
 		BigDecimal prod0Counter1_5 = new BigDecimal(0);
 		BigDecimal prod0Counter1_6 = new BigDecimal(0);
 		BigDecimal prod0Counter1_7 = new BigDecimal(0);
@@ -305,7 +308,7 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		BigDecimal prod0Counter2_0 = new BigDecimal(0);
 		
 		
-		
+		//calculating alpha
 		List<Sale> sales = saleDao.findAll();
 		for (Sale sale : sales){
 			if (sale.getPrice().doubleValue() == new BigDecimal(1.5).doubleValue()
@@ -363,6 +366,8 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		} else{ prod0Price1_5 = (new BigDecimal(1.5).subtract(avgPriceProd0)).multiply(
 				(prod0Counter1_5.divide(noOfDayProd0Price1_5, 4, RoundingMode.HALF_UP)).subtract(avgSalePerPriceVarProd0));
 			prod0PriceDiff1_5 = (new BigDecimal(1.5).subtract(avgPriceProd0)).pow(2);
+			System.out.println("+++On average, on 1 day the number of sold icecream (price 1.5) is: "+ 
+					new BigDecimal(saleDao.getNoSalePerPriceVar(products.get(0), new BigDecimal(1.5))).divide(noOfDayProd0Price1_5,0, RoundingMode.HALF_UP));
 		}
 		
 		if (noOfDayProd0Price1_6.doubleValue()==BigDecimal.ZERO.doubleValue()){
@@ -379,6 +384,8 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		} else{prod0Price1_7 = (new BigDecimal(1.7).subtract(avgPriceProd0)).multiply(
 				(prod0Counter1_7.divide(noOfDayProd0Price1_7, 4, RoundingMode.HALF_UP)).subtract(avgSalePerPriceVarProd0));
 			prod0PriceDiff1_7 = (new BigDecimal(1.7).subtract(avgPriceProd0)).pow(2);
+			System.out.println("+++On average, on 1 day the number of sold icecream (price 1.7) is: "+
+					new BigDecimal(saleDao.getNoSalePerPriceVar(products.get(0), new BigDecimal(1.7))).divide(noOfDayProd0Price1_7,0, RoundingMode.HALF_UP));
 		}
 		
 		if (noOfDayProd0Price1_8.doubleValue()==BigDecimal.ZERO.doubleValue()){
@@ -410,11 +417,13 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		final BigDecimal divisorAlpha = prod0PriceDiff1_5.add(prod0PriceDiff1_6).add(prod0PriceDiff1_7).add(prod0PriceDiff1_8).add(prod0PriceDiff1_9).add(prod0PriceDiff2_0);
 		
 		final BigDecimal alpha = dividendAlpha.divide(divisorAlpha, 2, RoundingMode.HALF_UP);
+		
+		//calculating beta
 		final BigDecimal beta = avgSalePerPriceVarProd0.subtract(alpha.multiply(avgPriceProd0)).setScale(2, RoundingMode.HALF_UP);
 				
 		System.out.println("The alpha value is: "+ alpha);
 		System.out.println("The beta value is: " + beta);
-				
+		
 		System.out.println("********** This is the report *********");
 		System.out.println("---The forecasted sale of icecream (2 Dollars/piece) on next Monday, temp. 20C is:");
 		System.out.println("--- "+ (new BigDecimal(2).multiply(alpha)).add(beta).add(coeffTem15to20).add(coeffMon).setScale(0, RoundingMode.HALF_UP) + " pieces" );		
@@ -430,6 +439,10 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		System.out.println("--- "+ (new BigDecimal(1.9).multiply(alpha)).add(beta).add(coeffTem20to25).add(coeffSat).setScale(0, RoundingMode.HALF_UP) + " pieces" );				
 		System.out.println("---The forecasted sale of icecream (1.7 Dollars/piece) on next Sunday, temp. 25C is:");
 		System.out.println("--- "+ (new BigDecimal(1.7).multiply(alpha)).add(beta).add(coeffTem20to25).add(coeffSun).setScale(0, RoundingMode.HALF_UP) + " pieces" );
+		
+		
+		
+		System.out.println("+++The sales number of icecream of yesterday is: "+new BigDecimal(saleDao.getNoSale1DayPerPriceVar(products.get(0), new BigDecimal(1))));
 	}
 
 	@BeforeTransaction
