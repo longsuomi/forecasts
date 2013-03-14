@@ -77,8 +77,8 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	long getNoPriceVar(@Param("product") Product product);
 	
 	// Get number of days that have 1 specific product price
-	@Query("select count(distinct s.dateOnly) from Sale s where s.product = :product and s.price = :price")
-	long getNoDayPerPriceVar(@Param("product") Product product, @Param("price") BigDecimal price);
+	@Query("select count(distinct s.dateOnly) from Sale s where s.product = :product and s.price between :min and :max")
+	long getNoDayPerPriceVar(@Param("product") Product product, @Param("min") BigDecimal min, @Param("max") BigDecimal max);
 	
 	// Get the total number of sales for 1 specific product price
 	@Query("select count(*) from Sale s where s.product = :product and s.price = :price")
