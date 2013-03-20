@@ -6,7 +6,6 @@ package net.combase.forecasts.domain;
 import java.io.Serializable;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 /**
@@ -21,7 +20,6 @@ public class Product implements Serializable
 	 */
 	private static final long serialVersionUID = -2609703642727070002L;
 	@Id
-	@GeneratedValue
 	private Long id;
 	private String name;
 
@@ -80,7 +78,7 @@ public class Product implements Serializable
 	 * @param id
 	 *            the id to set
 	 */
-	protected void setId(final Long id)
+	public void setId(final Long id)
 	{
 		this.id = id;
 	}

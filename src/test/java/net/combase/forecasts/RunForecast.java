@@ -319,11 +319,9 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		for (final Product product : productDao.findAll())
 		{
 			final ProductValues values = new ProductValues(product);
-			
+
 			/*
-			 * TODO calculate ranges
-			 * get min and max by query
-			 * calculate 
+			 * TODO calculate ranges get min and max by query calculate
 			 */
 			values.getValues().add(new RangedValue(new BigDecimal(0), new BigDecimal(1.5)));
 			values.getValues().add(new RangedValue(new BigDecimal(1.5), new BigDecimal(2)));
@@ -454,11 +452,13 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	@BeforeTransaction
 	public void setupData() throws Exception
 	{
+		// use PopulateData.java instead
+		/*-
 		executeSqlScript("classpath:clear.sql", false);
 
 		generateProducts();
 		generateSales();
-
+		 */
 
 	}
 }
