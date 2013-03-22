@@ -38,10 +38,15 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	
 	@Query("select count(*) from Sale")
 	long getTotalSaleNo();
-	
-	//count number of days in total
+	@Query("select count(*) from Sale s where s.product =:product")
+	long getTotalSaleNoProd(@Param("product") Product product);
+	//count number of days in total 
 	@Query("select count(distinct dateOnly) from Sale ")
 	long getNoOfDayInTotal();
+	//count number of days in total Each Product
+	@Query("select count(distinct dateOnly) from Sale s where s.product =:product ")
+	long getNoOfDayProd(@Param("product") Product product);
+	
 	
 	
 	//*** Checking the effect of ratio: Temperature
@@ -61,12 +66,38 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	//Count number of Mon/Tue/Wed... in the whole database
 	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day")
 	long getDayOfWeek(@Param("day") int day);
+	// Checking the total sales for Mon/Tue/Wed....EACH PRODUCT
+	@Query("select count(*) from Sale s where s.dayOfWeek = :day and s.product =:product")
+	long getSaleEachDayProd(@Param("day") int day,@Param("product") Product product);
+	//Count number of Mon/Tue/Wed... in the whole database EACH PRODUCT
+	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day and s.product =:product")
+	long getDayOfWeekProd(@Param("day") int day,@Param("product") Product product);
 	
+	
+	//*** Checking the effect of ratio: Month of year
+	//count number of months in total (-----------maximum 12 months-----------)
+	@Query("select count(distinct s.monthOfYear) from Sale s")
+	long getNoOfMonthInTotal();
+	// Checking the total sales for Jan/Fer/Mar....
+	@Query("select count(*) from Sale s where s.monthOfYear = :month")
+	long getSaleEachMonth(@Param("month") int month);
+	//Count number of Jan/Fer/Mar... in the whole database
+	@Query("select count(distinct s.monthOfYear) from Sale s where s.monthOfYear = :month")
+	long getMonthOfYear(@Param("month") int month);
+		
 	
 	//*** Checking the effect of ratio: Price of the product 
 	//Get the average price of 1 product 
 	@Query("select AVG(price) from Sale s where s.product = :product")
 	double getAvgPrice(@Param("product") Product product);
+	
+	//Get the min price of 1 product 
+	@Query("select MIN(price) from Sale s where s.product = :product")
+	double getMinPrice(@Param("product") Product product);
+		
+	//Get the max price of 1 product 
+	@Query("select MAX(price) from Sale s where s.product = :product")
+	double getMaxPrice(@Param("product") Product product);
 	
 	//Get total sales number for each product
 	@Query("select count(*) from Sale s where s.product = :product")

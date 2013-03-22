@@ -35,6 +35,10 @@ public class Sale implements Serializable
 	private Date dateTime;
 	//
 	private int dayOfWeek;
+	
+	public int monthOfYear;
+
+	
 
 	private BigDecimal discout = BigDecimal.ZERO;
 
@@ -96,6 +100,10 @@ public class Sale implements Serializable
 	public int getDayOfWeek()
 	{
 		return dayOfWeek;
+	}
+	
+	private int getMonthOfYear() {
+		return monthOfYear;
 	}
 
 	/**
@@ -160,6 +168,8 @@ public class Sale implements Serializable
 		dateTime = date.toDate();
 		dateOnly = date.toLocalDate().toDate();
 		dayOfWeek = date.getDayOfWeek();
+		monthOfYear = date.getMonthOfYear();
+	
 	}
 
 	/**
@@ -171,7 +181,13 @@ public class Sale implements Serializable
 		this.dayOfWeek = dayOfWeek;
 	}
 
+	
 
+	private void setMonthOfYear(final int monthOfYear) {
+		this.monthOfYear = monthOfYear;
+	}
+	
+	
 	/**
 	 * @param discout
 	 *            the discout to set
