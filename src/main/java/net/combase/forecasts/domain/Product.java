@@ -22,7 +22,7 @@ public class Product implements Serializable
 	@Id
 	private Long id;
 	private String name;
-
+	
 	/**
 	 * {@inheritDoc}
 	 */

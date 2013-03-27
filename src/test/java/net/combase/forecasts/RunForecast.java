@@ -5,6 +5,7 @@ package net.combase.forecasts;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,9 +17,12 @@ import net.combase.forecasts.domain.Sale;
 import net.combase.forecasts.util.ProductValues;
 import net.combase.forecasts.util.RangedValue;
 
+
 import org.joda.time.DateMidnight;
 import org.joda.time.DateTime;
 import org.joda.time.Months;
+import org.joda.time.Period;
+import org.joda.time.PeriodType;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -67,6 +71,7 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	/**
 	 * 
 	 */
+	/*
 	@Transactional
 	private void generateSales()
 	{
@@ -134,11 +139,12 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 
 		}
 	}
-
+	 */
 	@Test
 	public void run()
 	{
 		System.out.println("calculate");
+		
 
 		// final DateTime from = new DateTime().minusDays(365);
 
@@ -146,23 +152,30 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		// new BigDecimal(0), new BigDecimal(18));
 		// final long warmSales = saleDao.getSalesForTemp(from.toDate(), new Date(),
 		// new BigDecimal(18), new BigDecimal(45));
-
-		// System.out.println(coldSales + " sales when it was cold");
-		// System.out.println(warmSales + " sales when it was warm");
-
+		
+		 java.util.Calendar myCalendar = java.util.Calendar.getInstance();
+		 myCalendar.set(2012, 0, 1, 0, 0, 1);
+	        DateTime miniDay = new DateTime(myCalendar);
+	        Date minDay = miniDay.toDate();
+	     myCalendar.set(2012, 2, 31, 23, 59, 59);
+	      	DateTime maxiDay = new DateTime(myCalendar);
+	      	Date maxDay = maxiDay.toDate();
+	      System.out.println("Starting time: " + minDay);
+	      System.out.println("Ending time: " + maxDay);
+	      
 		// total number of day
-		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal());
+		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal(minDay,maxDay));
 		System.out.println("number of day in total: " + noOfDayTotal);
 
 		// total number of sales
-		final BigDecimal totalSaleNo = new BigDecimal(saleDao.getTotalSaleNo());
+		final BigDecimal totalSaleNo = new BigDecimal(saleDao.getTotalSaleNo(minDay,maxDay));
 		System.out.println("number of sale in total: " + totalSaleNo);
 
 		// number of sale in 1 day on average
 		final BigDecimal averageSalePerDay = totalSaleNo.divide(noOfDayTotal, 2,
 			RoundingMode.HALF_UP);
 
-
+		/*
 		// *** Checking the effect of ratio: Temperature
 		// Checking number of sales in each temp range
 		final BigDecimal saleTemp15to20 = new BigDecimal(saleDao.getSalesFromTemp15To20(
@@ -239,10 +252,10 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		System.out.println("The coefficient of the temp. range 20-25 is: " + coeffTem20to25);
 		System.out.println("The coefficient of the temp. range 25-30 is: " + coeffTem25to30);
 		System.out.println("The coefficient of the temp. range over 30 is: " + coeffTemOver30);
+		 */
 
-
+		/*
 		// *** Checking the effect of ratio: Day of week (FOR ALL PRODUCTS)
-		//ratio: Month
 		// Checking the total sales for Mon/Tue/Wed....
 		final BigDecimal saleMon = new BigDecimal(saleDao.getSaleEachDay(1));
 		final BigDecimal saleTue = new BigDecimal(saleDao.getSaleEachDay(2));
@@ -260,6 +273,7 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		final BigDecimal noOfFri = new BigDecimal(saleDao.getDayOfWeek(5));
 		final BigDecimal noOfSat = new BigDecimal(saleDao.getDayOfWeek(6));
 		final BigDecimal noOfSun = new BigDecimal(saleDao.getDayOfWeek(7));
+		
 		
 		final BigDecimal coeffMon = saleMon.divide(noOfMon, 2, RoundingMode.HALF_UP).subtract(
 			averageSalePerDay);
@@ -283,101 +297,157 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		System.out.println("The coefficient of Friday is: " + coeffFri);
 		System.out.println("The coefficient of Saturday is: " + coeffSat);
 		System.out.println("The coefficient of Sunday is: " + coeffSun);
+		*/
 		
 		
-		//***ratio: day of week, for EACH PRODUCT
-		// Checking the total sales for Mon/Tue/Wed....
-		final List<Product> products = productDao.findAll();
+		final Map<Product, ProductValues> valueMap = new HashMap<Product, ProductValues>();
+		
+		
+		/*
+		for (final Product product : productDao.findAll()){
+				
+			final ProductValues values = new ProductValues(product);
 			
-		for (Product product : products){
-		// total number of day EACH PRODUCT
-		final BigDecimal noOfDayTotalProd = new BigDecimal(saleDao.getNoOfDayProd(product));
-			
-		// total number of sales EACH PRODUCT
-		final BigDecimal totalSaleNoProd = new BigDecimal(saleDao.getTotalSaleNoProd(product));
-				
-		// number of sale in 1 day on average EACH PRODUCT
-		final BigDecimal averageSalePerDayProd = totalSaleNoProd.divide(noOfDayTotalProd, 2,
-		RoundingMode.HALF_UP);
-					
-		final BigDecimal saleMonProd = new BigDecimal(saleDao.getSaleEachDayProd(1, product));
-		final BigDecimal saleTueProd = new BigDecimal(saleDao.getSaleEachDayProd(2, product));
-		final BigDecimal saleWedProd = new BigDecimal(saleDao.getSaleEachDayProd(3, product));
-		final BigDecimal saleThuProd = new BigDecimal(saleDao.getSaleEachDayProd(4, product));
-		final BigDecimal saleFriProd = new BigDecimal(saleDao.getSaleEachDayProd(5, product));
-		final BigDecimal saleSatProd = new BigDecimal(saleDao.getSaleEachDayProd(6, product));
-		final BigDecimal saleSunProd = new BigDecimal(saleDao.getSaleEachDayProd(7, product));
-				
-				
-		// Count number of "day of week" in the whole database
-		final BigDecimal noOfMonProd = new BigDecimal(saleDao.getDayOfWeekProd(1, product));
-		final BigDecimal noOfTueProd = new BigDecimal(saleDao.getDayOfWeekProd(2, product));
-		final BigDecimal noOfWedProd = new BigDecimal(saleDao.getDayOfWeekProd(3, product));
-		final BigDecimal noOfThuProd = new BigDecimal(saleDao.getDayOfWeekProd(4, product));
-		final BigDecimal noOfFriProd = new BigDecimal(saleDao.getDayOfWeekProd(5, product));
-		final BigDecimal noOfSatProd = new BigDecimal(saleDao.getDayOfWeekProd(6, product));
-		final BigDecimal noOfSunProd = new BigDecimal(saleDao.getDayOfWeekProd(7, product));
-				
+			final BigDecimal testing = new BigDecimal(saleDao.getTotalSaleNoProd(product, minDay, maxDay));
+			System.out.println("testing " + testing);
+			System.out.println("min Price is: "+ saleDao.getMinPrice(product,minDay,maxDay));
+			System.out.println(new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay)));
+			values.getValues().add(new RangedValue(saleDao.getMinPrice(product,minDay,maxDay), new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay))));
+			values.getValues().add(new RangedValue(new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay)), saleDao.getMaxPrice(product, minDay, maxDay)));
 
-		final BigDecimal coeffMonProd = saleMonProd.divide(noOfMonProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffTueProd = saleTueProd.divide(noOfTueProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffWedProd = saleWedProd.divide(noOfWedProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffThuProd = saleThuProd.divide(noOfThuProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffFriProd = saleFriProd.divide(noOfFriProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffSatProd = saleSatProd.divide(noOfSatProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-		final BigDecimal coeffSunProd = saleSunProd.divide(noOfSunProd, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerDayProd);
-				
-		System.out.println("The coefficient of Monday of "+ product.getName()+ " is: " + coeffMonProd);
-		System.out.println("The coefficient of Tueday of "+ product.getName()+ " is: " + coeffTueProd);
-		System.out.println("The coefficient of Wednesday of "+ product.getName()+ " is: " + coeffWedProd);
-		System.out.println("The coefficient of Thursday of "+ product.getName()+ " is: " + coeffThuProd);
-		System.out.println("The coefficient of Friday of "+ product.getName()+ " is: " + coeffFriProd);
-		System.out.println("The coefficient of Saturday of "+ product.getName()+ " is: " + coeffSatProd);
-		System.out.println("The coefficient of Sunday of "+ product.getName()+ " is: " + coeffSunProd);
+			valueMap.put(product, values);
 		}
+		*/
 		
-		// *** Checking the effect of ratio: Day of week (FOR ALL PRODUCTS)
-		//
-		// total number of day
-		final BigDecimal noOfMonthTotal = new BigDecimal(saleDao.getNoOfMonthInTotal());
-		System.out.println("number of months in total: " + noOfMonthTotal);
-
-		// total number of sales: totalSaleNo
-		
-		// number of sale in 1 month on average
-		final BigDecimal averageSalePerMonth = totalSaleNo.divide(noOfMonthTotal, 2,
-					RoundingMode.HALF_UP);
-		//Count number of sales for each month	
-		final BigDecimal saleJan = new BigDecimal(saleDao.getSaleEachMonth(1));
-		final BigDecimal saleFer = new BigDecimal(saleDao.getSaleEachMonth(2));
-		final BigDecimal saleMar = new BigDecimal(saleDao.getSaleEachMonth(3));
-		final BigDecimal saleApr = new BigDecimal(saleDao.getSaleEachMonth(4));
-		final BigDecimal saleMay = new BigDecimal(saleDao.getSaleEachMonth(5));
-		final BigDecimal saleJun = new BigDecimal(saleDao.getSaleEachMonth(6));
+		final List<Product> products =productDao.findAll();		
+		for (Product product : products){
+			//***ratio: day of week, for EACH PRODUCT
+			// total number of day EACH PRODUCT
+			final BigDecimal noOfDayTotalProd = new BigDecimal(saleDao.getNoOfDayProd(product,minDay,maxDay));
+			System.out.println("no of days \""+ product.getName()+"\" is sold: " +noOfDayTotalProd);
+			if (noOfDayTotalProd.compareTo(BigDecimal.ZERO)!=0){
+							
+				// total number of sales EACH PRODUCT
+				final BigDecimal totalSaleNoProd = new BigDecimal(saleDao.getTotalSaleNoProd(product,minDay,maxDay));
+				System.out.println("number of sales of this product in this period: "+totalSaleNoProd);
+				// number of sale in 1 day on average EACH PRODUCT
+				final BigDecimal averageSalePerDayProd = totalSaleNoProd.divide(noOfDayTotalProd, 2,
+				RoundingMode.HALF_UP);
+				System.out.println("Number of sales per day, on average: "+averageSalePerDayProd);							
+								
+				// Checking the total sales for Mon/Tue/Wed....		
+				final BigDecimal saleMonProd = new BigDecimal(saleDao.getSaleEachDayProd(1, product,minDay,maxDay));
+				final BigDecimal saleTueProd = new BigDecimal(saleDao.getSaleEachDayProd(2, product,minDay,maxDay));
+				final BigDecimal saleWedProd = new BigDecimal(saleDao.getSaleEachDayProd(3, product,minDay,maxDay));
+				final BigDecimal saleThuProd = new BigDecimal(saleDao.getSaleEachDayProd(4, product,minDay,maxDay));
+				final BigDecimal saleFriProd = new BigDecimal(saleDao.getSaleEachDayProd(5, product,minDay,maxDay));
+				final BigDecimal saleSatProd = new BigDecimal(saleDao.getSaleEachDayProd(6, product,minDay,maxDay));
+				final BigDecimal saleSunProd = new BigDecimal(saleDao.getSaleEachDayProd(7, product,minDay,maxDay));
+				
+				System.out.println("no of sales on Monday: "+saleMonProd);
+				System.out.println("no of sales on Tueday: " +saleTueProd);
+				System.out.println("no of sales on Wednesday: "+saleWedProd);
+				System.out.println("no of sales on Thursday: "+saleThuProd);
+				System.out.println("no of sales on Friday: "+saleFriProd);
+				System.out.println("no of sales on Saturday: "+saleSatProd);
+				System.out.println("no of sales on Sunday: "+saleSunProd);
+						
+				// Count number of "day of week" in the whole database
+				final BigDecimal noOfMonProd = new BigDecimal(saleDao.getDayOfWeekProd(1,minDay,maxDay));
+				final BigDecimal noOfTueProd = new BigDecimal(saleDao.getDayOfWeekProd(2,minDay,maxDay));
+				final BigDecimal noOfWedProd = new BigDecimal(saleDao.getDayOfWeekProd(3,minDay,maxDay));
+				final BigDecimal noOfThuProd = new BigDecimal(saleDao.getDayOfWeekProd(4,minDay,maxDay));
+				final BigDecimal noOfFriProd = new BigDecimal(saleDao.getDayOfWeekProd(5,minDay,maxDay));
+				final BigDecimal noOfSatProd = new BigDecimal(saleDao.getDayOfWeekProd(6,minDay,maxDay));
+				final BigDecimal noOfSunProd = new BigDecimal(saleDao.getDayOfWeekProd(7,minDay,maxDay));
+				System.out.println("no of Monday in this period: "+noOfMonProd);
+				System.out.println("no of Tuesday in this period: "+noOfTueProd);
+				System.out.println("no of Wednesday in this period: "+noOfWedProd);
+				System.out.println("no of Thursday in this period: "+noOfThuProd);
+				System.out.println("no of Friday in this period: "+noOfFriProd);
+				System.out.println("no of Saturday in this period: "+noOfSatProd);
+				System.out.println("no of Sunday in this period: "+noOfSunProd);
+						
+				BigDecimal coeffMonProd,coeffTueProd,coeffWedProd,coeffThuProd,coeffFriProd,coeffSatProd,coeffSunProd;
+				if (noOfMonProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffMonProd = saleMonProd.divide(noOfMonProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffMonProd = BigDecimal.ZERO;
+				}
+				if (noOfTueProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffTueProd = saleTueProd.divide(noOfTueProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffTueProd = BigDecimal.ZERO;
+				}
+				if (noOfWedProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffWedProd = saleWedProd.divide(noOfWedProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffWedProd = BigDecimal.ZERO;
+				}
+				if (noOfThuProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffThuProd = saleThuProd.divide(noOfThuProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffThuProd = BigDecimal.ZERO;
+				}
+				if (noOfFriProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffFriProd = saleFriProd.divide(noOfFriProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffFriProd = BigDecimal.ZERO;
+				}
+				if (noOfSatProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffSatProd = saleSatProd.divide(noOfSatProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffSatProd = BigDecimal.ZERO;
+				}
+				if (noOfSunProd.compareTo(BigDecimal.ZERO) == 1){
+					coeffSunProd = saleSunProd.divide(noOfSunProd, 2, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd);
+				} else {
+					coeffSunProd = BigDecimal.ZERO;
+				}
+				
+				System.out.println("The coefficient of Monday of "+ product.getName()+ " is: " + coeffMonProd);
+				System.out.println("The coefficient of Tueday of "+ product.getName()+ " is: " + coeffTueProd);
+				System.out.println("The coefficient of Wednesday of "+ product.getName()+ " is: " + coeffWedProd);
+				System.out.println("The coefficient of Thursday of "+ product.getName()+ " is: " + coeffThuProd);
+				System.out.println("The coefficient of Friday of "+ product.getName()+ " is: " + coeffFriProd);
+				System.out.println("The coefficient of Saturday of "+ product.getName()+ " is: " + coeffSatProd);
+				System.out.println("The coefficient of Sunday of "+ product.getName()+ " is: " + coeffSunProd);
 			
-		// Count number of Jan/Feb/Mar in the whole database
-		final BigDecimal noOfJan = new BigDecimal(saleDao.getMonthOfYear(1));
-		final BigDecimal noOfFer = new BigDecimal(saleDao.getMonthOfYear(2));
-		final BigDecimal noOfMar = new BigDecimal(saleDao.getMonthOfYear(3));
-		final BigDecimal noOfApr = new BigDecimal(saleDao.getMonthOfYear(4));
-		final BigDecimal noOfMay = new BigDecimal(saleDao.getMonthOfYear(5));
-		final BigDecimal noOfJun = new BigDecimal(saleDao.getMonthOfYear(6));
-		
-		//calculate coefficients of each month (FOR ALL PRODUCTS)
-		final BigDecimal coeffJan = BigDecimal.ZERO;
-		final BigDecimal coeffFeb = BigDecimal.ZERO;
-		final BigDecimal coeffMar = saleJan.divide(noOfMar, 2, RoundingMode.HALF_UP).subtract(
-				averageSalePerMonth);
-		
-		
-		
+				//***ratio: price
+				// calculating x mean
+				final BigDecimal avgPriceProd =new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay)).setScale(
+					4, RoundingMode.HALF_UP);
+				
+				System.out.println("The average price of \"" + product.getName() + "\" is: " +
+					avgPriceProd);
+				
+				// calculating y mean
+				final BigDecimal avgSalePerPriceVarProd = totalSaleNoProd.divide(
+					new BigDecimal(saleDao.getNoPriceVar(product,minDay,maxDay)), 4, RoundingMode.HALF_UP);
+			System.out.println("number of price variants: "+ saleDao.getNoPriceVar(product,minDay,maxDay));
+			System.out.println("average sale per price variant "+ avgSalePerPriceVarProd);
+			
+			final ProductValues values = new ProductValues(product);
+			values.getValues().add(new RangedValue(saleDao.getMinPrice(product,minDay,maxDay), new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay))));
+			values.getValues().add(new RangedValue(new BigDecimal(saleDao.getAvgPrice(product,minDay,maxDay)), saleDao.getMaxPrice(product, minDay, maxDay)));
+
+			valueMap.put(product, values);			
+			
+					
+			} else {
+				System.out.println("---\""+ product.getName()+"\" was not sold in this period.");
+				continue;
+			}
+		}
+						
+		/*
 		// *** Checking the effect of ratio: Price of the product
 		
 		// -------------for (Product product : products){}
@@ -406,12 +476,8 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		{
 			final ProductValues values = new ProductValues(product);
 			
-			/*
-			 * TODO calculate ranges
-			 * get min and max by query
-			 * calculate 
-			 */
-			values.getValues().add(new RangedValue(new BigDecimal(1), new BigDecimal(saleDao.getAvgPrice(product))));
+			
+			values.getValues().add(new RangedValue(saleDao.getMinPrice(product), new BigDecimal(saleDao.getAvgPrice(product))));
 			values.getValues().add(new RangedValue(new BigDecimal(saleDao.getAvgPrice(product)), new BigDecimal(2)));
 
 			valueMap.put(product, values);
@@ -487,54 +553,97 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 
 		System.out.println("The alpha value is: " + alpha);
 		System.out.println("The beta value is: " + beta);
+		*/
 
+		/*
+		// *** Checking the effect of ratio: Month of year (FOR ALL PRODUCTS)
+		//
+		// total number of month
+		final DateTime minDate = new DateTime(saleDao.getMinDate());
+		final DateTime maxDate = new DateTime(saleDao.getMaxDate());
+		System.out.println("****minDate"+ minDate);
+		
+		Period p = new Period(minDate, maxDate);
+	 	int noOfMonthTotal = p.normalizedStandard(PeriodType.months()).getMonths();
+		
+		
+		System.out.println("number of months in total: " + noOfMonthTotal);
+
+		// total number of sales: totalSaleNo
+		
+		// number of sale in 1 month on average
+		final BigDecimal averageSalePerMonth = totalSaleNo.divide(new BigDecimal(noOfMonthTotal), 2,
+					RoundingMode.HALF_UP);
+		//Count number of sales for each month	
+		final BigDecimal saleJan = new BigDecimal(saleDao.getSaleEachMonth(1));
+		final BigDecimal saleFer = new BigDecimal(saleDao.getSaleEachMonth(2));
+		final BigDecimal saleMar = new BigDecimal(saleDao.getSaleEachMonth(3));
+		final BigDecimal saleApr = new BigDecimal(saleDao.getSaleEachMonth(4));
+		final BigDecimal saleMay = new BigDecimal(saleDao.getSaleEachMonth(5));
+		final BigDecimal saleJun = new BigDecimal(saleDao.getSaleEachMonth(6));
+			
+		// Count number of Jan/Feb/Mar in the whole database
+		final BigDecimal noOfJan = new BigDecimal(saleDao.getMonthOfYear(1));
+		final BigDecimal noOfFer = new BigDecimal(saleDao.getMonthOfYear(2));
+		final BigDecimal noOfMar = new BigDecimal(saleDao.getMonthOfYear(3));
+		final BigDecimal noOfApr = new BigDecimal(saleDao.getMonthOfYear(4));
+		final BigDecimal noOfMay = new BigDecimal(saleDao.getMonthOfYear(5));
+		final BigDecimal noOfJun = new BigDecimal(saleDao.getMonthOfYear(6));
+		
+		//calculate coefficients of each month (FOR ALL PRODUCTS)
+		final BigDecimal coeffJan = BigDecimal.ZERO;
+		final BigDecimal coeffFeb = BigDecimal.ZERO;
+		final BigDecimal coeffMar = saleJan.divide(noOfMar, 2, RoundingMode.HALF_UP).subtract(
+				averageSalePerMonth);
+		*/
+		
+		/*
 		System.out.println("********** This is the report *********");
-		System.out.println("---The forecasted sale of icecream (2 Dollars/piece) on next Monday, temp. 20C is:");
+		System.out.println("---The forecasted sale of icecream (2 Dollars/piece) on next Monday, temp is:");
 		System.out.println("--- " +
 			(new BigDecimal(2).multiply(alpha)).add(beta)
-				.add(coeffTem15to20)
+				
 				.add(coeffMon)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.8 Dollars/piece) on next Tuesday, temp. 22C is:");
+		System.out.println("---The forecasted sale of icecream (1.8 Dollars/piece) on next Tuesday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.8).multiply(alpha)).add(beta)
-				.add(coeffTem20to25)
+				
 				.add(coeffTue)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.6 Dollars/piece) on next Wednesday, temp. 19C is:");
+		System.out.println("---The forecasted sale of icecream (1.6 Dollars/piece) on next Wednesday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.6).multiply(alpha)).add(beta)
-				.add(coeffTem15to20)
+				
 				.add(coeffWed)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.8 Dollars/piece) on next Thursday, temp. 24C is:");
+		System.out.println("---The forecasted sale of icecream (1.8 Dollars/piece) on next Thursday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.8).multiply(alpha)).add(beta)
-				.add(coeffTem20to25)
+				
 				.add(coeffThu)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.5 Dollars/piece) on next Friday, temp. 26C is:");
+		System.out.println("---The forecasted sale of icecream (1.5 Dollars/piece) on next Friday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.5).multiply(alpha)).add(beta)
-				.add(coeffTem25to30)
+				
 				.add(coeffFri)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.9 Dollars/piece) on next Saturday, temp. 23C is:");
+		System.out.println("---The forecasted sale of icecream (1.9 Dollars/piece) on next Saturday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.9).multiply(alpha)).add(beta)
-				.add(coeffTem20to25)
+				
 				.add(coeffSat)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
-		System.out.println("---The forecasted sale of icecream (1.7 Dollars/piece) on next Sunday, temp. 25C is:");
+		System.out.println("---The forecasted sale of icecream (1.7 Dollars/piece) on next Sunday is:");
 		System.out.println("--- " +
 			(new BigDecimal(1.7).multiply(alpha)).add(beta)
-				.add(coeffTem20to25)
+				
 				.add(coeffSun)
 				.setScale(0, RoundingMode.HALF_UP) + " pieces");
+		 */
 
-
-		//System.out.println("+++The sales number of icecream of yesterday is: " +
-			//new BigDecimal(saleDao.getNoSale1DayPerPriceVar(products.get(0), new BigDecimal(1))));
+		
 	}
 
 	@BeforeTransaction

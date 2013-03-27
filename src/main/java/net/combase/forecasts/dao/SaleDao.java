@@ -4,11 +4,13 @@
 package net.combase.forecasts.dao;
 
 import java.math.BigDecimal;
+import java.security.Timestamp;
 import java.util.Date;
 
 import net.combase.forecasts.domain.Product;
 import net.combase.forecasts.domain.Sale;
 
+import org.joda.time.DateTime;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -36,16 +38,18 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	@Query("select count(*) from Sale s where s.temp > :temp30")
 	long getSalesWhenTempOver30(@Param("temp30") BigDecimal temp30);
 	
-	@Query("select count(*) from Sale")
-	long getTotalSaleNo();
-	@Query("select count(*) from Sale s where s.product =:product")
-	long getTotalSaleNoProd(@Param("product") Product product);
+	//count number of sales in total 
+	@Query("select count(*) from Sale s where s.dateTime between :minDay and :maxDay")
+	long getTotalSaleNo(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
+	//count number of sales in total EACH PRODUCT
+	@Query("select count(*) from Sale s where s.product =:product and s.dateTime between :minDay and :maxDay")
+	long getTotalSaleNoProd(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	//count number of days in total 
-	@Query("select count(distinct dateOnly) from Sale ")
-	long getNoOfDayInTotal();
+	@Query("select count(distinct dateOnly) from Sale s where s.dateTime between :minDay and :maxDay")
+	long getNoOfDayInTotal(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	//count number of days in total Each Product
-	@Query("select count(distinct dateOnly) from Sale s where s.product =:product ")
-	long getNoOfDayProd(@Param("product") Product product);
+	@Query("select count(distinct dateOnly) from Sale s where s.product =:product and s.dateTime between :minDay and :maxDay ")
+	long getNoOfDayProd(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	
 	
 	
@@ -62,22 +66,23 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	// Checking the total sales for Mon/Tue/Wed....
 	@Query("select count(*) from Sale s where s.dayOfWeek = :day")
 	long getSaleEachDay(@Param("day") int day);
-	
 	//Count number of Mon/Tue/Wed... in the whole database
 	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day")
 	long getDayOfWeek(@Param("day") int day);
 	// Checking the total sales for Mon/Tue/Wed....EACH PRODUCT
-	@Query("select count(*) from Sale s where s.dayOfWeek = :day and s.product =:product")
-	long getSaleEachDayProd(@Param("day") int day,@Param("product") Product product);
+	@Query("select count(*) from Sale s where s.dayOfWeek = :day and s.product =:product and s.dateTime between :minDay and :maxDay")
+	long getSaleEachDayProd(@Param("day") int day,@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	//Count number of Mon/Tue/Wed... in the whole database EACH PRODUCT
-	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day and s.product =:product")
-	long getDayOfWeekProd(@Param("day") int day,@Param("product") Product product);
+	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day and s.dateTime between :minDay and :maxDay")
+	long getDayOfWeekProd(@Param("day") int day,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	
 	
 	//*** Checking the effect of ratio: Month of year
 	//count number of months in total (-----------maximum 12 months-----------)
-	@Query("select count(distinct s.monthOfYear) from Sale s")
-	long getNoOfMonthInTotal();
+	@Query("select min(s.dateTime) from Sale s")
+	Date getMinDate();
+	@Query("select max(s.dateTime) from Sale s")
+	Date getMaxDate();
 	// Checking the total sales for Jan/Fer/Mar....
 	@Query("select count(*) from Sale s where s.monthOfYear = :month")
 	long getSaleEachMonth(@Param("month") int month);
@@ -88,24 +93,20 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	
 	//*** Checking the effect of ratio: Price of the product 
 	//Get the average price of 1 product 
-	@Query("select AVG(price) from Sale s where s.product = :product")
-	double getAvgPrice(@Param("product") Product product);
+	@Query("select AVG(price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
+	double getAvgPrice(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	
 	//Get the min price of 1 product 
-	@Query("select MIN(price) from Sale s where s.product = :product")
-	double getMinPrice(@Param("product") Product product);
+	@Query("select MIN(price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
+	BigDecimal getMinPrice(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 		
 	//Get the max price of 1 product 
-	@Query("select MAX(price) from Sale s where s.product = :product")
-	double getMaxPrice(@Param("product") Product product);
-	
-	//Get total sales number for each product
-	@Query("select count(*) from Sale s where s.product = :product")
-	long getTotalSaleNoEachProd(@Param("product") Product product);
+	@Query("select MAX(price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
+	BigDecimal getMaxPrice(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	
 	//Get the number of price variants of 1 product 
-	@Query("select count(distinct price) from Sale s where s.product = :product")
-	long getNoPriceVar(@Param("product") Product product);
+	@Query("select count(distinct price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
+	long getNoPriceVar(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	
 	// Get number of days that have 1 specific product price
 	@Query("select count(distinct s.dateOnly) from Sale s where s.product = :product and s.price between :min and :max")
@@ -115,8 +116,4 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	@Query("select count(*) from Sale s where s.product = :product and s.price = :price")
 	long getNoSalePerPriceVar(@Param("product") Product product, @Param("price") BigDecimal price);
 
-	// Get the number of sales of 1 specific day 
-	@Query("select count(*) from Sale s where s.product = :product and s.dateOnly=DATE_SUB(CURDATE(),:noDays)")
-	long getNoSale1DayPerPriceVar(@Param("product") Product product, @Param("noDays") BigDecimal noDays);
-	
 }
