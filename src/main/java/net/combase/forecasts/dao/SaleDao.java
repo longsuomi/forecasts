@@ -6,6 +6,7 @@ package net.combase.forecasts.dao;
 import java.math.BigDecimal;
 import java.security.Timestamp;
 import java.util.Date;
+import java.util.List;
 
 import net.combase.forecasts.domain.Product;
 import net.combase.forecasts.domain.Sale;
@@ -38,6 +39,10 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	@Query("select count(*) from Sale s where s.temp > :temp30")
 	long getSalesWhenTempOver30(@Param("temp30") BigDecimal temp30);
 	
+	
+	//get a list of products between 2 time ranges
+	@Query("select s.product from Sale s where s.dateTime between :minDay and :maxDay")
+	List<Product> getSaleNoPeriod(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	//count number of sales in total 
 	@Query("select count(*) from Sale s where s.dateTime between :minDay and :maxDay")
 	long getTotalSaleNo(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
@@ -64,17 +69,17 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	
 	//*** Checking the effect of ratio: Day of week
 	// Checking the total sales for Mon/Tue/Wed....
-	@Query("select count(*) from Sale s where s.dayOfWeek = :day")
-	long getSaleEachDay(@Param("day") int day);
-	//Count number of Mon/Tue/Wed... in the whole database
-	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day")
-	long getDayOfWeek(@Param("day") int day);
+	@Query("select count(*) from Sale s where s.dayOfWeek = :day and s.dateTime between :minDay and :maxDay")
+	long getSaleEachDay(@Param("day") int day,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
+	//Count number of Mon/Tue/Wed... in the whole database 
+	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day and s.dateTime between :minDay and :maxDay")
+	long getDayOfWeek(@Param("day") int day,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
 	// Checking the total sales for Mon/Tue/Wed....EACH PRODUCT
 	@Query("select count(*) from Sale s where s.dayOfWeek = :day and s.product =:product and s.dateTime between :minDay and :maxDay")
 	long getSaleEachDayProd(@Param("day") int day,@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
-	//Count number of Mon/Tue/Wed... in the whole database EACH PRODUCT
-	@Query("select count(distinct s.dateOnly) from Sale s where s.dayOfWeek = :day and s.dateTime between :minDay and :maxDay")
-	long getDayOfWeekProd(@Param("day") int day,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
+	//count number of sales of all products on 1 specific day
+	@Query("select count(*) from Sale s where s.dateOnly= :day")
+	long getSalesNoSpecificDay(@Param("day") Date day);
 	
 	
 	//*** Checking the effect of ratio: Month of year
@@ -86,9 +91,8 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	// Checking the total sales for Jan/Fer/Mar....
 	@Query("select count(*) from Sale s where s.monthOfYear = :month")
 	long getSaleEachMonth(@Param("month") int month);
-	//Count number of Jan/Fer/Mar... in the whole database
-	@Query("select count(distinct s.monthOfYear) from Sale s where s.monthOfYear = :month")
-	long getMonthOfYear(@Param("month") int month);
+	
+	
 		
 	
 	//*** Checking the effect of ratio: Price of the product 
@@ -103,10 +107,10 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	//Get the max price of 1 product 
 	@Query("select MAX(price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
 	BigDecimal getMaxPrice(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
-	
-	//Get the number of price variants of 1 product 
-	@Query("select count(distinct price) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay")
-	long getNoPriceVar(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay);
+		
+	// Get the no of sales of 1 product between 2 price limits
+	@Query("select count(*) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay and s.price between :minPrice and :maxPrice")
+	long getNoSalePriceRange(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("minPrice") BigDecimal minPrice,@Param("maxPrice") BigDecimal maxPrice);
 	
 	// Get number of days that have 1 specific product price
 	@Query("select count(distinct s.dateOnly) from Sale s where s.product = :product and s.price between :min and :max")
