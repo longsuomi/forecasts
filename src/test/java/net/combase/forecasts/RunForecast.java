@@ -67,6 +67,10 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	      System.out.println("Starting time: " + minDay);
 	      System.out.println("Ending time: " + maxDay);
 	      
+	    final List<Date> topSalesDay = saleDao.getTopSalesDay(minDay, maxDay);
+		System.out.println("top sales day: "+topSalesDay.get(0));
+		System.out.println("worst sales day: "+topSalesDay.get(topSalesDay.size() - 1));
+	      
 		// total number of day in examination period
 		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal(minDay,maxDay));
 		System.out.println("number of days in examination period: " + noOfDayTotal);

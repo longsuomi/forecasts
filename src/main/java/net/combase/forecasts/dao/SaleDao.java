@@ -84,6 +84,10 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	@Query("select count(*) from Sale s where s.dateOnly= :day and s.product =:product")
 	long getSales1DayProd(@Param("day") Date day,@Param("product") Product product);
 	
+
+	@Query("select DATE(s.dateTime) from Sale s where s.dateTime between :from and :to GROUP BY DATE(s.dateTime) order by count(s.dateTime) DESC")
+	List<Date> getTopSalesDay(@Param("from") Date from,@Param("to") Date to);
+	
 	
 	//*** Checking the effect of ratio: Month of year
 	//count number of months in total (-----------maximum 12 months-----------)
