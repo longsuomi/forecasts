@@ -80,6 +80,9 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	//count number of sales of all products on 1 specific day
 	@Query("select count(*) from Sale s where s.dateOnly= :day")
 	long getSalesNoSpecificDay(@Param("day") Date day);
+	//count number of sales of 1 specific product on 1 specific day
+	@Query("select count(*) from Sale s where s.dateOnly= :day and s.product =:product")
+	long getSales1DayProd(@Param("day") Date day,@Param("product") Product product);
 	
 	
 	//*** Checking the effect of ratio: Month of year
