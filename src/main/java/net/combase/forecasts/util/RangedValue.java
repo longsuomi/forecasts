@@ -14,15 +14,6 @@ public class RangedValue
 {
 	private final BigDecimal max;
 	private final BigDecimal min;
-	private BigDecimal avg;
-
-	public BigDecimal getAvg() {
-		return avg;
-	}
-
-	public void setAvg(BigDecimal max, BigDecimal min) {
-		this.avg = (max.subtract(min)).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
-	}
 
 	private BigDecimal value;
 

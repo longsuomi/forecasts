@@ -43,8 +43,7 @@ import org.springframework.transaction.annotation.Transactional;
 @ContextConfiguration("classpath:application-context.xml")
 public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 {
-	private static final BigDecimal TEMP_MAX = new BigDecimal(34);
-	private static final BigDecimal TEMP_MIN = new BigDecimal(15);
+
 
 	@Autowired
 	private ProductDao productDao;
@@ -68,15 +67,41 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	      System.out.println("Ending time: " + maxDay);
 	      
 	    final List<Date> topSalesDay = saleDao.getTopSalesDay(minDay, maxDay);
-		System.out.println("top sales day: "+topSalesDay.get(0));
-		System.out.println("worst sales day: "+topSalesDay.get(topSalesDay.size() - 1));
-	      
+		final List<Long> topSalesNo = saleDao.getTopSalesNo(minDay, maxDay);
+		
+		//Q3 splits highest 25% of data set
+		int index_q3 = topSalesNo.size() / 4;
+		int q3 = topSalesNo.get(index_q3-1).intValue();
+		//Q1 splits lowest 25% of data set
+		int index_q1 = index_q3 * 3;
+		int q1 = topSalesNo.get(index_q1-1).intValue();
+		
+		int interquartile = q3 - q1;
+		
+		double lowerFence = q1 - 1.5 * interquartile;
+		double upperFence = q3 + 1.5 * interquartile;
+		System.out.println("A day is an outlier if its sales is lower than: "+ lowerFence);
+		System.out.println("A day is an outlier if its sales is higher than: : "+ upperFence);  
+		
+			
+		List<Date> outliers = new ArrayList<Date>();
+		for (int i=0; i<topSalesNo.size(); i++){
+			Long value = topSalesNo.get(i);
+			if(value < lowerFence || value > upperFence){
+				outliers.add(topSalesDay.get(i));
+				System.out.println("an outlier date:" +topSalesDay.get(i).toString()
+									+ ", with sales: " + value);
+				
+			}
+		}
+				
+		
 		// total number of day in examination period
-		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal(minDay,maxDay));
+		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal(minDay,maxDay,outliers));
 		System.out.println("number of days in examination period: " + noOfDayTotal);
 
 		// total number of sales
-		final BigDecimal totalSaleNo = new BigDecimal(saleDao.getTotalSaleNo(minDay,maxDay));
+		final BigDecimal totalSaleNo = new BigDecimal(saleDao.getTotalSaleNo(minDay,maxDay,outliers));
 		System.out.println("number of sales of all products in examination period: " + totalSaleNo);
 
 		// number of sale in 1 day on average
@@ -92,8 +117,8 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		List<BigDecimal> noWeekday = new ArrayList<BigDecimal>(); // total number of Mon/Tue/Wed...
 		List<BigDecimal> coeffWeekday = new ArrayList<BigDecimal>(); // coefficient of each weekday 
 		for (int i=1;i<8;i++){
-			saleWeekday.add(new BigDecimal(saleDao.getSaleEachDay(i, minDay, maxDay)));
-			noWeekday.add(new BigDecimal(saleDao.getDayOfWeek(i, minDay, maxDay)));
+			saleWeekday.add(new BigDecimal(saleDao.getSaleEachDay(i, minDay, maxDay,outliers)));
+			noWeekday.add(new BigDecimal(saleDao.getDayOfWeek(i, minDay, maxDay,outliers)));
 			coeffWeekday.add(saleWeekday.get(i-1).divide(noWeekday.get(i-1), 0, RoundingMode.HALF_UP).subtract(
 					averageSalePerDay));
 		}
@@ -115,7 +140,7 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 	 	final Date maxDate = maxiDate.toDate();	
 	 	
 	 	// total number of sales in 26 months
-	 	final BigDecimal sale26Months = new BigDecimal(saleDao.getTotalSaleNo(minDate,maxDate));
+	 	final BigDecimal sale26Months = new BigDecimal(saleDao.getTotalSaleNo(minDate,maxDate, outliers));
 	 		System.out.println("number of sales in 26 months: "+ sale26Months);
 		// number of sales in 1 month on average
 		final BigDecimal averageSalePerMonth = sale26Months.divide(new BigDecimal(noOfMonthTotal), 0, RoundingMode.HALF_UP);
@@ -162,133 +187,146 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 		
 		
 		//forecast sales of each product
-		final Map<Product, ProductValues> valueMap = new HashMap<Product, ProductValues>();
-		final HashSet<Product> products = new HashSet<Product>(saleDao.getSaleNoPeriod(minDay, maxDay));
-		
-				
+		//final Map<Product, ProductValues> valueMap = new HashMap<Product, ProductValues>();
+		final HashSet<Product> products = new HashSet<Product>(saleDao.getProdList(minDay, maxDay, outliers));
 		for (Product product : products){
 			//***ratio: day of week, for EACH PRODUCT
 			// total number of day EACH PRODUCT
-			final BigDecimal noOfDayTotalProd = new BigDecimal(saleDao.getNoOfDayProd(product,minDay,maxDay));
+			final BigDecimal noOfDayTotalProd = new BigDecimal(saleDao.getNoOfDayProd(product,minDay,maxDay,outliers));
 			System.out.println("---checking product \""+ product.getName()+"\", no of days this product was sold in: " +noOfDayTotalProd);
-			if (noOfDayTotalProd.compareTo(BigDecimal.ZERO)!=0){
-							
-				// total number of sales EACH PRODUCT
-				final BigDecimal totalSaleNoProd = new BigDecimal(saleDao.getTotalSaleNoProd(product,minDay,maxDay));
-				
-				// number of sale in 1 day on average EACH PRODUCT
-				final BigDecimal averageSalePerDayProd = totalSaleNoProd.divide(noOfDayTotalProd, 2,
-				RoundingMode.HALF_UP);
-										
-				//if avg no of sales is less than 5 per day, we cannot make a forecast
-				if (averageSalePerDayProd.compareTo(new BigDecimal(5))>=0){					
-					
-					System.out.println("number of sales of this product in this period: "+totalSaleNoProd);
-					System.out.println("Number of sales per day, on average: "+averageSalePerDayProd);	
-					
-					List <BigDecimal> saleWeekdayProd = new ArrayList<BigDecimal>(); // total sales of this product on Mon/Tue/Wed....		
-					List <BigDecimal> coeffDayProd = new ArrayList<BigDecimal>();
-					for (int i=1;i<=7;i++){
-						saleWeekdayProd.add(new BigDecimal(saleDao.getSaleEachDayProd(i, product,minDay,maxDay)));
-						coeffDayProd.add(saleWeekdayProd.get(i-1).divide(noWeekday.get(i-1), 0, RoundingMode.HALF_UP).subtract(
-								averageSalePerDayProd));
-					}
-					printCoeffDayProd(product, coeffDayProd);
-				
-					//***ratio: price
-					// calculating x mean
-					BigDecimal priceDiff = saleDao.getMaxPrice(product, minDay, maxDay).subtract(saleDao.getMinPrice(product,minDay,maxDay));
-					// if there is only 1 price all the time, we only use ratio day of week to calculate
-					if (priceDiff.compareTo(BigDecimal.ZERO) == 0){
-						System.out.println("*****************");
-						System.out.println("Making the forecast sales of \""+product.getName()+ "\" for the first week of April 2012, using ratio \"Day of week\"");
-						
-						//checking 7 first days of April to return forecast sales as well as actual sales
-						for (int i=1; i<=7; i++){
-							myCalendar.set(2012, 3, i);	        
-							DateTime april_day = new DateTime(myCalendar);
-					        Date aprilDay = april_day.toLocalDate().toDate();
-					       
-					        for (int j=1;j<=7;j++){
-					        	if (april_day.getDayOfWeek()==j){
-					        		System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
-					        				+ averageSalePerDayProd.add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
-					        		System.out.println("The ACTUAL sales: "
-					        		        + saleDao.getSales1DayProd(aprilDay, product));
-					        	}	
-					        }
-					     }
-					// if there are 2 or more price variants, we will forecast sales based on day of week and price	
-					} else {
-						final BigDecimal avgPrice = saleDao.getMinPrice(product,minDay,maxDay).add(priceDiff.divide(new BigDecimal(2), 2, RoundingMode.HALF_UP));
-							System.out.println("The average price of \"" + product.getName() + "\" is: " + avgPrice);
-						
-						// calculating y mean
-						final BigDecimal avgSalePerPriceRange = totalSaleNoProd.divide(
-							new BigDecimal(2), 4, RoundingMode.HALF_UP);				
-						System.out.println("average sale per price range "+ avgSalePerPriceRange);				
-					
-						BigDecimal dividendAlpha = BigDecimal.ZERO;
-						BigDecimal divisorAlpha = BigDecimal.ZERO;	
-					
-						final ProductValues values = new ProductValues(product);
-						values.getValues().add(new RangedValue(saleDao.getMinPrice(product,minDay,maxDay),avgPrice));
-						values.getValues().add(new RangedValue(avgPrice, saleDao.getMaxPrice(product, minDay, maxDay)));
-		
-						valueMap.put(product, values);		
-						for (final RangedValue range : values.getValues()){
-							
-							BigDecimal salePriceRange = new BigDecimal(saleDao.getNoSalePriceRange(product, minDay, maxDay,range.getMin(),range.getMax()));
-							System.out.println("---No of sales of \""+ product.getName() + "\" with price between "
-							+range.getMin()+ " and "+range.getMax() + " is: " + salePriceRange);
-							
-							BigDecimal rangePriceTag = range.getMin().add((range.getMax().subtract(range.getMin())).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP));
-							//System.out.println(rangePriceTag);
-							
-							BigDecimal dividendFactor = (salePriceRange.subtract(avgSalePerPriceRange)).multiply(rangePriceTag.subtract(avgPrice));						
-							dividendAlpha = dividendAlpha.add(dividendFactor);
-							//System.out.println("dividendAlpha is: "+dividendAlpha);
-							
-							BigDecimal divisorFactor = (rangePriceTag.subtract(avgPrice)).pow(2);
-							divisorAlpha = divisorAlpha.add(divisorFactor);
-							//System.out.println("divisorAlpha is: "+divisorAlpha);
-						}
-						final BigDecimal alpha = dividendAlpha.divide(divisorAlpha, 2, RoundingMode.HALF_UP);	
-						final BigDecimal beta = avgSalePerPriceRange.subtract(alpha.multiply(avgPrice)).setScale(2, RoundingMode.HALF_UP);
-						
-						System.out.println("*****************");
-						System.out.println("Making the forecast sales of \""+product.getName()+ "\" for the first week of April 2012, using ratio \"Price of product\" and \"Day of week\"");
-						
-						//checking 7 first days of April to return forecast sales as well as actual sales
-						for (int i=1; i<=7; i++){
-							myCalendar.set(2012, 3, i);	        
-							DateTime april_day = new DateTime(myCalendar);
-					        Date aprilDay = april_day.toLocalDate().toDate();
-					       
-					        for (int j=1;j<=7;j++){
-					        	if (april_day.getDayOfWeek()==j){
-						        	System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
-						    				+ (avgPrice.add(saleDao.getMinPrice(product,minDay,maxDay))).divide(new BigDecimal(2))
-						    				.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
-						    		System.out.println("The ACTUAL sales: "
-						    		        + saleDao.getSales1DayProd(aprilDay, product));
-					        	}					        
-					    	} 
-						}
-					}						
-					
-				} else {
-					System.out.println("---We cannot make a forecast for: \""+ product.getName()+"\"");
-					continue;
-					
+
+			// total number of sales EACH PRODUCT
+			final BigDecimal totalSaleNoProd = new BigDecimal(saleDao.getTotalSaleNoProd(product,minDay,maxDay, outliers));
+
+			// number of sale in 1 day on average EACH PRODUCT
+			final BigDecimal averageSalePerDayProd = totalSaleNoProd.divide(noOfDayTotalProd, 2,
+					RoundingMode.HALF_UP);
+
+			//if avg no of sales is less than 5 per day, we cannot make a forecast
+			if (averageSalePerDayProd.compareTo(new BigDecimal(5))>=0){					
+
+				System.out.println("number of sales of this product in this period: "+totalSaleNoProd);
+				System.out.println("Number of sales per day, on average: "+averageSalePerDayProd);	
+
+				List <BigDecimal> saleWeekdayProd = new ArrayList<BigDecimal>(); // total sales of this product on Mon/Tue/Wed....		
+				List <BigDecimal> coeffDayProd = new ArrayList<BigDecimal>();
+				for (int i=1;i<=7;i++){
+					saleWeekdayProd.add(new BigDecimal(saleDao.getSaleEachDayProd(i, product,minDay,maxDay, outliers)));
+					coeffDayProd.add(saleWeekdayProd.get(i-1).divide(noWeekday.get(i-1), 0, RoundingMode.HALF_UP).subtract(
+							averageSalePerDayProd));
 				}
+				printCoeffDayProd(product, coeffDayProd);
+
+				//***ratio: price
+				// calculating x mean
+				BigDecimal priceDiff = saleDao.getMaxPrice(product, minDay, maxDay, outliers).subtract(saleDao.getMinPrice(product,minDay,maxDay, outliers));
+				// if there is only 1 price all the time, we only use ratio day of week to calculate
+				if (priceDiff.compareTo(BigDecimal.ZERO) == 0){
+					System.out.println("*****************");
+					System.out.println("Making the forecast sales of \""+product.getName()+ "\" for the first week of April 2012, using ratio \"Day of week\"");
+
+					//checking 7 first days of April to return forecast sales as well as actual sales
+					for (int i=1; i<=7; i++){
+						myCalendar.set(2012, 3, i);	        
+						DateTime april_day = new DateTime(myCalendar);
+						Date aprilDay = april_day.toLocalDate().toDate();
+
+						for (int j=1;j<=7;j++){
+							if (april_day.getDayOfWeek()==j){
+								System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+										+ averageSalePerDayProd.add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+								System.out.println("The ACTUAL sales: "
+										+ saleDao.getSales1DayProd(aprilDay, product));
+							}	
+						}
+					}
+					// if there are 2 or more price variants, we will forecast sales based on day of week and price	
+				} else {
+					//x mean
+					final BigDecimal avgPrice = saleDao.getMinPrice(product,minDay,maxDay, outliers).add(priceDiff.divide(new BigDecimal(2), 2, RoundingMode.HALF_UP));
+					System.out.println("The average price of \"" + product.getName() + "\" is: " + avgPrice);
+
+					// y mean
+					final BigDecimal avgSalePerPriceRange = totalSaleNoProd.divide(
+							new BigDecimal(2), 4, RoundingMode.HALF_UP);				
+					System.out.println("average sale per price range "+ avgSalePerPriceRange);				
+
+					BigDecimal dividendAlpha = BigDecimal.ZERO;
+					BigDecimal divisorAlpha = BigDecimal.ZERO;	
+
+					final ProductValues values = new ProductValues(product);
+					values.getValues().add(new RangedValue(saleDao.getMinPrice(product,minDay,maxDay, outliers),avgPrice));
+					values.getValues().add(new RangedValue(avgPrice, saleDao.getMaxPrice(product, minDay, maxDay, outliers)));
+
+					for (final RangedValue range : values.getValues()){
+
+						BigDecimal salePriceRange = new BigDecimal(saleDao.getNoSalePriceRange(product, minDay, maxDay,range.getMin(),range.getMax(),outliers));
+						System.out.println("---No of sales of \""+ product.getName() + "\" with price between "
+								+range.getMin()+ " and "+range.getMax() + " is: " + salePriceRange);
+
+						BigDecimal rangePriceTag = (range.getMax().add(range.getMin())).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
+						//System.out.println(rangePriceTag);
+
+						BigDecimal dividendFactor = (salePriceRange.subtract(avgSalePerPriceRange)).multiply(rangePriceTag.subtract(avgPrice));						
+						dividendAlpha = dividendAlpha.add(dividendFactor);
+						//System.out.println("dividendAlpha is: "+dividendAlpha);
+
+						BigDecimal divisorFactor = (rangePriceTag.subtract(avgPrice)).pow(2);
+						divisorAlpha = divisorAlpha.add(divisorFactor);
+						//System.out.println("divisorAlpha is: "+divisorAlpha);
+					}
+					final BigDecimal alpha = dividendAlpha.divide(divisorAlpha, 2, RoundingMode.HALF_UP);	
+					final BigDecimal beta = avgSalePerPriceRange.subtract(alpha.multiply(avgPrice)).setScale(2, RoundingMode.HALF_UP);
+
+					System.out.println("*****************");
+					System.out.println("Making the forecast sales of \""+product.getName()+ "\" for the first week of April 2012, using ratio \"Price of product\" and \"Day of week\"");
+
+					//checking 7 first days of April to return forecast sales as well as actual sales
+					for (int i=1; i<=7; i++){
+						myCalendar.set(2012, 3, i);	        
+						DateTime april_day = new DateTime(myCalendar);
+						Date aprilDay = april_day.toLocalDate().toDate();
+						
+						BigDecimal price1Day;
+						try {
+						price1Day = saleDao.getPrice1Day(product,aprilDay);
+						}
+						catch (Exception e){
+							price1Day = avgPrice;
+						}
+						for (int j=1;j<=7;j++){
+							if (april_day.getDayOfWeek()==j){
+								
+								if (price1Day.compareTo(avgPrice)<=0){
+									System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+											+ (avgPrice.add(saleDao.getMinPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
+											.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+									System.out.println("The ACTUAL sales: "
+											+ saleDao.getSales1DayProd(aprilDay, product));
+								} else {
+									System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+											+ (avgPrice.add(saleDao.getMaxPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
+											.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+									System.out.println("The ACTUAL sales: "
+											+ saleDao.getSales1DayProd(aprilDay, product));
+								}
+								
+								
+								
+								
+							}					        
+						} 
+					}
+				}						
+
 			} else {
-				System.out.println("---\""+ product.getName()+"\" was not sold in this period.");
+				System.out.println("---We cannot make a forecast for: \""+ product.getName()+"\"");
 				continue;
+
 			}
 		}
-						
-	System.out.println("Sales forecast has been calculated!");		
+
+		System.out.println("Sales forecast has been calculated successfully!");		
 	}
 
 	private void printCoeffDayProd(Product product,
