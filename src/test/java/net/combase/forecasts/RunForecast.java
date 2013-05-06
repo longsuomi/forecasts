@@ -244,8 +244,9 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 				} else {
 					//x mean
 					final BigDecimal avgPrice = saleDao.getMinPrice(product,minDay,maxDay, outliers).add(priceDiff.divide(new BigDecimal(2), 2, RoundingMode.HALF_UP));
-					System.out.println("The average price of \"" + product.getName() + "\" is: " + avgPrice);
+					//System.out.println("The average price of \"" + product.getName() + "\" is: " + avgPrice);
 
+					/*
 					// y mean
 					final BigDecimal avgSalePerPriceRange = totalSaleNoProd.divide(
 							new BigDecimal(2), 4, RoundingMode.HALF_UP);				
@@ -253,7 +254,7 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 
 					BigDecimal dividendAlpha = BigDecimal.ZERO;
 					BigDecimal divisorAlpha = BigDecimal.ZERO;	
-
+					 */
 					final ProductValues values = new ProductValues(product);
 					values.getValues().add(new RangedValue(saleDao.getMinPrice(product,minDay,maxDay, outliers),avgPrice));
 					values.getValues().add(new RangedValue(avgPrice, saleDao.getMaxPrice(product, minDay, maxDay, outliers)));
@@ -263,18 +264,42 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 						BigDecimal salePriceRange = new BigDecimal(saleDao.getNoSalePriceRange(product, minDay, maxDay,range.getMin(),range.getMax(),outliers));
 						System.out.println("---No of sales of \""+ product.getName() + "\" with price between "
 								+range.getMin()+ " and "+range.getMax() + " is: " + salePriceRange);
-
+						/*
 						BigDecimal rangePriceTag = (range.getMax().add(range.getMin())).divide(new BigDecimal(2), 2, RoundingMode.HALF_UP);
 						//System.out.println(rangePriceTag);
-
 						BigDecimal dividendFactor = (salePriceRange.subtract(avgSalePerPriceRange)).multiply(rangePriceTag.subtract(avgPrice));						
 						dividendAlpha = dividendAlpha.add(dividendFactor);
 						//System.out.println("dividendAlpha is: "+dividendAlpha);
-
 						BigDecimal divisorFactor = (rangePriceTag.subtract(avgPrice)).pow(2);
 						divisorAlpha = divisorAlpha.add(divisorFactor);
 						//System.out.println("divisorAlpha is: "+divisorAlpha);
+						 */
+						 
 					}
+					
+					/////**** new added part
+					System.out.println("*****************");
+					System.out.println("Making the forecast sales of \""+product.getName()+ "\" for the first week of April 2012, using ratio \"Day of week\"");
+
+					//checking 7 first days of April to return forecast sales as well as actual sales
+					for (int i=1; i<=7; i++){
+						myCalendar.set(2012, 3, i);	        
+						DateTime april_day = new DateTime(myCalendar);
+						Date aprilDay = april_day.toLocalDate().toDate();
+
+						for (int j=1;j<=7;j++){
+							if (april_day.getDayOfWeek()==j){
+								System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+										+ averageSalePerDayProd.add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+								System.out.println("The ACTUAL sales: "
+										+ saleDao.getSales1DayProd(aprilDay, product));
+							}	
+						}
+					}
+					
+					
+					//ORIGINAL part
+					/*
 					final BigDecimal alpha = dividendAlpha.divide(divisorAlpha, 2, RoundingMode.HALF_UP);	
 					final BigDecimal beta = avgSalePerPriceRange.subtract(alpha.multiply(avgPrice)).setScale(2, RoundingMode.HALF_UP);
 
@@ -288,35 +313,35 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 						Date aprilDay = april_day.toLocalDate().toDate();
 						
 						BigDecimal price1Day;
+						//to catch the situation when there are more than 1 price variant a day
 						try {
 						price1Day = saleDao.getPrice1Day(product,aprilDay);
 						}
 						catch (Exception e){
 							price1Day = avgPrice;
 						}
-						for (int j=1;j<=7;j++){
-							if (april_day.getDayOfWeek()==j){
-								
-								if (price1Day.compareTo(avgPrice)<=0){
-									System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
-											+ (avgPrice.add(saleDao.getMinPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
-											.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
-									System.out.println("The ACTUAL sales: "
-											+ saleDao.getSales1DayProd(aprilDay, product));
-								} else {
-									System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
-											+ (avgPrice.add(saleDao.getMaxPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
-											.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
-									System.out.println("The ACTUAL sales: "
-											+ saleDao.getSales1DayProd(aprilDay, product));
-								}
-								
-								
-								
+						if (price1Day != null){
+							for (int j=1;j<=7;j++){
+								if (april_day.getDayOfWeek()==j){
+									if (price1Day.compareTo(avgPrice)<=0){
+										System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+												+ (avgPrice.add(saleDao.getMinPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
+												.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+										System.out.println("The ACTUAL sales: "
+												+ saleDao.getSales1DayProd(aprilDay, product));
+									} else {
+										System.out.println("-" + aprilDay.toString().substring(0, 10)+ ", \""+ product.getName() +"\", FORECAST sales: "  
+												+ (avgPrice.add(saleDao.getMaxPrice(product,minDay,maxDay, outliers))).divide(new BigDecimal(2))
+												.multiply(alpha).add(beta).add(coeffDayProd.get(j-1)).setScale(0, RoundingMode.HALF_UP));
+										System.out.println("The ACTUAL sales: "
+												+ saleDao.getSales1DayProd(aprilDay, product));
+									}
+								}	
 								
 							}					        
 						} 
 					}
+					*/
 				}						
 
 			} else {
