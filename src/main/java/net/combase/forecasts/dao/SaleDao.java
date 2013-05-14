@@ -94,4 +94,8 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	@Query("select count(*) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay and s.price between :minPrice and :maxPrice and DATE(s.dateTime) not in :outliers")
 	long getNoSalePriceRange(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("minPrice") BigDecimal minPrice,@Param("maxPrice") BigDecimal maxPrice,@Param("outliers") List<Date> outliers);
 	
+	// Get the no of days the product was sold with price between 2 price limits
+	@Query("select count(distinct dateOnly) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay and s.price between :minPrice and :maxPrice and DATE(s.dateTime) not in :outliers")
+	long getNoDayPriceRange(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("minPrice") BigDecimal minPrice,@Param("maxPrice") BigDecimal maxPrice,@Param("outliers") List<Date> outliers);
+		
 }
