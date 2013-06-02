@@ -81,10 +81,13 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		
 		double lowerFence = q1 - 1.5 * interquartile;
 		double upperFence = q3 + 1.5 * interquartile;
+		//**** Set upperfence = 3500
+		upperFence = 3500;
 		System.out.println("A day is an outlier if its sales is lower than: "+ lowerFence);
 		System.out.println("A day is an outlier if its sales is higher than: : "+ upperFence);  
 		
-			
+		
+		
 		List<Date> outliers = new ArrayList<Date>();
 		for (int i=0; i<topSalesNo.size(); i++){
 			Long value = topSalesNo.get(i);
@@ -95,7 +98,7 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 				
 			}
 		}
-				
+							
 		
 		// total number of day in examination period
 		final BigDecimal noOfDayTotal = new BigDecimal(saleDao.getNoOfDayInTotal(minDay,maxDay,outliers));
@@ -111,11 +114,91 @@ public class RunForecast extends AbstractTransactionalJUnit4SpringContextTests
 		System.out.println("number of sales per day, in average: " + averageSalePerDay);
 		
 		
+		// forecast sales in money each day of week
+				ArrayList <String> dayString = new ArrayList<String>(Arrays.asList("Monday", "Tuesday", "Wednesday","Thursday","Friday","Saturday","Sunday"));
+		
+				List <HashSet<Product>> productInWeekday = new ArrayList<HashSet<Product>>(); //List of all products sold in Mon/Tue/Wed...
+				List<BigDecimal> moneyDayOfWeek = new ArrayList<BigDecimal>();//total money received by selling 1 product, for each day of week
+				List<BigDecimal> noWeekday = new ArrayList<BigDecimal>();
+				List<BigDecimal> avgMoneyDayOfWeek = new ArrayList<BigDecimal>();
+				for (int i=1;i<=7;i++){
+					noWeekday.add(new BigDecimal(saleDao.getDayOfWeek(i, minDay, maxDay,outliers)));
+					moneyDayOfWeek.add(BigDecimal.ZERO);
+				}
+				//System.out.println("no of weekday: " + noWeekday);
+				for (int i=1;i<=7;i++){
+					System.out.println("---Calculating the sales in money for all the "+dayString.get(i-1));
+					//noWeekday.add(new BigDecimal(saleDao.getDayOfWeek(i, minDay, maxDay,outliers)));
+					productInWeekday.add(new HashSet<Product>(saleDao.getProdListDay(minDay, maxDay, outliers,i)));
+							
+					for (Product product : productInWeekday.get(i-1)){
+						final HashSet<BigDecimal> priceVariant = new HashSet<BigDecimal>(saleDao.getPriceList(minDay, maxDay, outliers,i,product));
+						BigDecimal salesThisPrice = BigDecimal.ZERO;
+						BigDecimal moneyThisProd = BigDecimal.ZERO;
+						//System.out.println("List of price: "+ priceVariant);
+						
+						for (BigDecimal price : priceVariant){
+							BigDecimal noSalesThisPrice = new BigDecimal(saleDao.getNoSalePriceVariant(product, minDay, maxDay, price, outliers));
+							salesThisPrice = price.multiply(noSalesThisPrice);
+							moneyThisProd = moneyThisProd.add(salesThisPrice);
+							//System.out.println("with price: "+price+ " "+product.getName()+" was sold: "+ noSalesThisPrice+" times.");
+						}
+						//System.out.println("total money received from selling this product on all the " +dayString.get(i-1)+ ": " +moneyThisProd);
+						moneyDayOfWeek.set(i-1, moneyDayOfWeek.get(i-1).add(moneyThisProd));
+						
+					}
+					
+					avgMoneyDayOfWeek.add(moneyDayOfWeek.get(i-1).divide(noWeekday.get(i-1),0, RoundingMode.HALF_UP));			
+				}
+				System.out.println("******************");
+				System.out.println("total sales from Monday to Sunday: " + moneyDayOfWeek);
+				System.out.println("average sales from Monday to Sunday: " + avgMoneyDayOfWeek);
+				
+				
+				for (int i=1; i<=7; i++){
+					myCalendar.set(2012, 3, i);	        
+					DateTime april_day = new DateTime(myCalendar);
+			        Date aprilDay = april_day.toLocalDate().toDate();
+			        System.out.println("-Calculating the FORECAST sales of \"" + aprilDay.toString().substring(0, 10) + "\" " );		        			
+			        //Calculating the actual sales
+			        BigDecimal actualSales = new BigDecimal(0);
+			        final HashSet<Product> productIn1Day = new HashSet<Product>(saleDao.getProdList1Day(aprilDay));
+			        			        
+			        for (Product product : productIn1Day){
+			        	final HashSet<BigDecimal> priceVariant1Day = new HashSet<BigDecimal>(saleDao.getPriceList1Day(aprilDay,product));
+			        	BigDecimal salesThisPrice = BigDecimal.ZERO;
+						BigDecimal moneyThisProd = BigDecimal.ZERO;
+						//System.out.println("List of price: "+ priceVariant1Day);
+						for (BigDecimal price: priceVariant1Day){
+			        		BigDecimal noSalesThisPrice = new BigDecimal(saleDao.getNoSalePriceVariant1Day(product, price,aprilDay));
+							salesThisPrice = price.multiply(noSalesThisPrice);
+							moneyThisProd = moneyThisProd.add(salesThisPrice);
+							//System.out.println("with price: "+price+ " "+product.getName()+" was sold: "+ noSalesThisPrice+" times.");
+
+			        	}
+						actualSales = actualSales.add(moneyThisProd);
+			        }
+			        
+			        //printing out the forecast
+			        for (int j=1;j<=7;j++){
+			        	if (april_day.getDayOfWeek()==j){
+				        	System.out.println("-FORECAST sales of \"" 
+				        			+ aprilDay.toString().substring(0, 10) + "\": " 
+				        			+ avgMoneyDayOfWeek.get(i-1)+ " dollars");
+				        			System.out.println("ACTUAL sales: "
+				        			+ actualSales+ " dollars");
+			        	}
+			        }
+				}
+		
+		
+		
+		
 		// *** Checking the effect of ratio: Day of week (FOR ALL PRODUCTS)
 		System.out.println("------ Checking the effect of \"Day of week\" on sales ");
 		
 		List<BigDecimal> saleWeekday = new ArrayList<BigDecimal>(); // total number of sales on Mon/Tue/Wed...
-		List<BigDecimal> noWeekday = new ArrayList<BigDecimal>(); // total number of Mon/Tue/Wed...
+		//List<BigDecimal> noWeekday = new ArrayList<BigDecimal>(); // total number of Mon/Tue/Wed...
 		List<BigDecimal> coeffWeekday = new ArrayList<BigDecimal>(); // coefficient of each weekday 
 		for (int i=1;i<8;i++){
 			saleWeekday.add(new BigDecimal(saleDao.getSaleEachDay(i, minDay, maxDay,outliers)));
@@ -185,7 +268,6 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 	        }
 		}
 	
-		
 		
 		//forecast sales of each product
 				
@@ -384,7 +466,6 @@ System.out.println("Making the forecast sales of all products for April 2012, us
 			}
 		}
 		//Printing: how many times sales on Mon/Tue... is higher/lower than average 
-		ArrayList <String> dayString = new ArrayList<String>(Arrays.asList("Monday", "Tuesday", "Wednesday","Thursday","Friday","Saturday","Sunday"));
 		for (int i = 0;i<=6;i++){
 			System.out.println("For " + dayString.get(i) +": "+ higherCounter.get(i) + " days - had sales higher than average");
 			System.out.println("For " + dayString.get(i) +": "+ equalCounter.get(i) + " days - had sales equaled to average");

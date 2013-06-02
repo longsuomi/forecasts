@@ -72,6 +72,34 @@ public interface SaleDao extends JpaRepository<Sale, Long>
 	long getSaleEachMonth(@Param("month") int month);
 	
 	
+	
+	//***forecast sales in money each day of week
+	//get a list of products for 1 day of week (Mon, Tue, Wed...)
+	@Query("select s.product from Sale s where s.dateTime between :minDay and :maxDay and DATE(s.dateTime) not in :outliers and s.dayOfWeek = :day ")
+	List<Product> getProdListDay(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("outliers") List<Date> outliers,@Param("day") int day);
+	
+	//get a list of products which were sold in 1 specific day
+		@Query("select s.product from Sale s where s.dateOnly= :day ")
+		List<Product> getProdList1Day(@Param("day") Date day);
+			
+	//get a list of price variants 
+	@Query("select s.price from Sale s where s.dateTime between :minDay and :maxDay and DATE(s.dateTime) not in :outliers and s.dayOfWeek = :day and s.product =:product")
+	List<BigDecimal> getPriceList(@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("outliers") List<Date> outliers,@Param("day") int day, @Param("product") Product product);
+		
+	//get a list of price variants for 1 specific day
+		@Query("select s.price from Sale s where s.dateOnly = :day and s.product =:product")
+		List<BigDecimal> getPriceList1Day(@Param("day") Date day, @Param("product") Product product);
+				
+	// Get the no of sales of 1 product with 1 specific price variant
+	@Query("select count(*) from Sale s where s.product = :product and s.dateTime between :minDay and :maxDay and s.price = :price and DATE(s.dateTime) not in :outliers")
+	long getNoSalePriceVariant(@Param("product") Product product,@Param("minDay") Date minDay,@Param("maxDay") Date maxDay,@Param("price") BigDecimal price,@Param("outliers") List<Date> outliers);	
+	
+	// Get the no of sales of 1 product with 1 specific price variant for 1 specific day
+		@Query("select count(*) from Sale s where s.product = :product  and s.price = :price and s.dateOnly = :day")
+		long getNoSalePriceVariant1Day(@Param("product") Product product,@Param("price") BigDecimal price,@Param("day") Date day);	
+		
+	
+	
 	//*** Checking the effect of ratio: Price of the product 
 
 	//get a list of products between 2 time ranges
